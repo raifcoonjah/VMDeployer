@@ -1,0 +1,51 @@
+#!/bin/bash
+
+
+# TODO:
+#
+# Add a feature that checks if vm is already deployed if yes == increase resources display prompt 
+# add a dynamic variables that checks the load and increases cpu usage
+#
+
+# Defaults
+DEFAULT_RAM_MB=512
+DEFAULT_DISK_SIZE=4  # In GiB
+
+if [ -z "$1" ]; then
+  echo "Usage: $0 <vm_name> [memory_mb] [disk_size_gb]"
+  exit 1
+fi
+
+if [ "$USER" != "root" ]; then
+   echo "Please use sudo to run this script."
+   exit 1
+fi
+
+VM_NAME="$1"
+RAM_MB="${2:-$DEFAULT_RAM_MB}"
+DISK_SIZE="${3:-$DEFAULT_DISK_SIZE}"
+VCPUS=1
+BACKING_IMAGE="/var/lib/libvirt/images/debian-12-generic-amd64.qcow2" # Add check if image is not found, print failure
+CLOUD_INIT_FILE="/home/raif.coonjah/VM/cloud-init.yaml" # Cloud init file used during deployment to publish different things
+NETWORK_BRIDGE="virbr0" # NET type: Bridge, the following guide can be used: https://wiki.libvirt.org/Networking.html
+OS_INFO="debian12" # Debian12 images are used
+
+VM_DISK_DIR="/var/lib/libvirt/images/${VM_NAME}"
+echo "Creating directory, please ignore failed message"
+mkdir -p "${VM_DISK_DIR}"
+
+echo "Virtual machine ${VM_NAME} has been created with ${RAM_MB} MB RAM and ${DISK_SIZE} GiB disk."
+sleep 3
+
+echo "You will be attached automatically to the VM after deployment. Your terminal will be taken away!"
+sleep 5
+
+virt-install \
+  --name="${VM_NAME}" \
+  --memory="${RAM_MB}" \
+  --vcpus="${VCPUS}" \
+  --disk="size=${DISK_SIZE},backing_store=${BACKING_IMAGE}" \
+  --cloud-init="user-data=${CLOUD_INIT_FILE},disable=on" \
+  --network="bridge=${NETWORK_BRIDGE}" \
+  --osinfo="${OS_INFO}"
+
