@@ -7,12 +7,11 @@
 # add a dynamic variables that checks the load and increases cpu usage
 #
 
-# Defaults
-DEFAULT_RAM_MB=512
-DEFAULT_DISK_SIZE=4  # In GiB
+# Main VARS 
+ISO="/var/lib/libvirt/images/debian-12-generic-amd64.qcow2" # Add check if image is not found, print failure
 
 if [ -z "$1" ]; then
-  echo "Usage: $0 <vm_name> [memory_mb] [disk_size_gb]"
+  echo "Usage: sudo $0 vm_name memory_mb disk_size_gb"
   exit 1
 fi
 
@@ -21,14 +20,23 @@ if [ "$USER" != "root" ]; then
    exit 1
 fi
 
+if [[ ! -f "$ISO" ]]; then
+   echo "Debian ISO not found, it will be downloaded in 5 seconds..."
+   sleep 5
+   wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2 -P /var/lib/libvirt/images/
+fi
+
+# Defaults
+DEFAULT_RAM_MB=512
+DEFAULT_DISK_SIZE=4  # In GiB
 VM_NAME="$1"
 RAM_MB="${2:-$DEFAULT_RAM_MB}"
 DISK_SIZE="${3:-$DEFAULT_DISK_SIZE}"
 VCPUS=1
-BACKING_IMAGE="/var/lib/libvirt/images/debian-12-generic-amd64.qcow2" # Add check if image is not found, print failure
-CLOUD_INIT_FILE="/home/raif.coonjah/VM/cloud-init.yaml" # Cloud init file used during deployment to publish different things
+CLOUD_INIT_FILE="/home/raif.coonjah/VM/cloud-init.yaml" # Cloud init file
 NETWORK_BRIDGE="virbr0" # NET type: Bridge, the following guide can be used: https://wiki.libvirt.org/Networking.html
 OS_INFO="debian12" # Debian12 images are used
+
 
 VM_DISK_DIR="/var/lib/libvirt/images/${VM_NAME}"
 echo "Creating directory, please ignore failed message"
