@@ -7,6 +7,8 @@
 # add a dynamic variables that checks the load and increases cpu usage
 #
 
+
+
 # Main VARS 
 ISO="/var/lib/libvirt/images/debian-12-generic-amd64.qcow2" # Add check if image is not found, print failure
 
@@ -21,7 +23,7 @@ if [ "$USER" != "root" ]; then
 fi
 
 if [[ ! -f "$ISO" ]]; then
-   echo "Debian ISO not found, it will be downloaded in 5 seconds..."
+   echo "Unable to find Debian iso, downloading in 5 seconds..."
    sleep 5
    wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2 -P /var/lib/libvirt/images/
 fi
@@ -37,10 +39,10 @@ CLOUD_INIT_FILE="/home/raif.coonjah/VM/cloud-init.yaml" # Cloud init file
 NETWORK_BRIDGE="virbr0" # NET type: Bridge, the following guide can be used: https://wiki.libvirt.org/Networking.html
 OS_INFO="debian12" # Debian12 images are used
 
-
 VM_DISK_DIR="/var/lib/libvirt/images/${VM_NAME}"
-echo "Creating directory, please ignore failed message"
+echo "Creating directory to store contents"
 mkdir -p "${VM_DISK_DIR}"
+
 
 echo "Virtual machine ${VM_NAME} has been created with ${RAM_MB} MB RAM and ${DISK_SIZE} GiB disk."
 sleep 3

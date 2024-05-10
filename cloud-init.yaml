@@ -8,4 +8,4 @@ users:
     shell: /bin/bash
     # content from $HOME/.ssh/id_rsa.pub on your host system
     ssh_authorized_keys:
-      - # SSH KEY
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILO8HtH0p4GNWLEMQhnXglrnWGAKQXHTc5trS2zKRC5j raif@oceandba.com 
