@@ -1,18 +1,25 @@
 #!/bin/bash
 
+VERSION="v1.1"
+VM_NAME="$1"
+RAM_MB="${2:-$DEFAULT_RAM_MB}"
+DISK_SIZE="${3:-$DEFAULT_DISK_SIZE}"
+OS_TYPE="${4:-debian}" # Default to debian if not provided
+VCPUS=1
 
-# TODO:
-#
-# Add a feature that checks if vm is already deployed if yes == increase resources display prompt 
-# add a dynamic variables that checks the load and increases cpu usage
-#
-
-# Defaults
-DEFAULT_RAM_MB=512
-DEFAULT_DISK_SIZE=4  # In GiB
 
 if [ -z "$1" ]; then
-  echo "Usage: $0 <vm_name> [memory_mb] [disk_size_gb]"
+  echo "Welcome to vmdeployer $VERSION"
+  echo "
+  ──────────
+  Supported OS:
+  ├── debian
+  ├── fedora
+  ├── rhel
+  ├── rocky9
+  ────────────"
+  echo "Usage: sudo $0 <vm_name> [memory_mb] [disk_size] [os_type]"
+  echo "INFO: VMdeployer is not meant to be used in production enviroments. You have been warned!"
   exit 1
 fi
 
@@ -21,22 +28,46 @@ if [ "$USER" != "root" ]; then
    exit 1
 fi
 
-VM_NAME="$1"
-RAM_MB="${2:-$DEFAULT_RAM_MB}"
-DISK_SIZE="${3:-$DEFAULT_DISK_SIZE}"
-VCPUS=1
-BACKING_IMAGE="/var/lib/libvirt/images/debian-12-generic-amd64.qcow2" # Add check if image is not found, print failure
+# Determine backing image based on OS_TYPE
+case "$OS_TYPE" in
+  debian)
+    BACKING_IMAGE="/var/lib/libvirt/images/debian-12-generic-amd64.qcow2"
+    OS_INFO="debian12"
+    ;;
+  rhel)
+    BACKING_IMAGE="/var/lib/libvirt/images/rhel-8.qcow2"
+    OS_INFO="rhel8"
+    ;;
+  rocky)
+    BACKING_IMAGE="/var/lib/libvirt/images/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2"
+    OS_INFO="rocky9"
+    ;;
+  fedora)
+    BACKING_IMAGE="/var/lib/libvirt/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2"
+    OS_INFO="fedora"
+    ;;
+  *)
+    echo "ERROR, unsupported OS type: $OS_TYPE"
+    echo "Supported types: debian, rhel, rocky & fedora (40)"
+    exit 1
+    ;;
+esac
+
+# Check if the backing image exists
+if [ ! -f "$BACKING_IMAGE" ]; then
+  echo "Backing image not found: $BACKING_IMAGE"
+  exit 1
+fi
+
 CLOUD_INIT_FILE="./cloud-init.yaml"
-NETWORK_BRIDGE="virbr0" # NET type: Bridge, the following guide can be used: https://wiki.libvirt.org/Networking.html
-OS_INFO="debian12" # Debian12 images are used
+NETWORK_BRIDGE="virbr0"
 
 VM_DISK_DIR="/var/lib/libvirt/images/${VM_NAME}"
-echo "Creating ${VM_NAME} directory..."
+echo "Creating ${VM_DISK_DIR} directory..."
 mkdir -p "${VM_DISK_DIR}"
+echo "Your Virtual Machine named: ${VM_NAME} has been created with ${RAM_MB} MB RAM and ${DISK_SIZE} GiB disk."
 
-echo "Virtual machine ${VM_NAME} has been created with ${RAM_MB} MB RAM and ${DISK_SIZE} GiB disk."
-
-echo "You will be attached automatically to the VM after deployment. Your terminal will be taken away!"
+echo "You will be attached automatically to the VM after deployment. Your terminal will be taken away."
 sleep 5
 
 virt-install \
@@ -47,4 +78,3 @@ virt-install \
   --cloud-init="user-data=${CLOUD_INIT_FILE},disable=on" \
   --network="bridge=${NETWORK_BRIDGE}" \
   --osinfo="${OS_INFO}"
-
